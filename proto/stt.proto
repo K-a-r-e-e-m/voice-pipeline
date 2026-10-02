@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package stt;
+
+service STTService {
+  rpc Transcribe (AudioRequest) returns (TranscriptionResponse);
+}
+
+message AudioRequest {
+  bytes audio_data = 1;      // Audio file bytes (WAV, MP3, FLAC) or raw 16kHz 16-bit PCM
+  string audio_format = 2;   // "wav", "pcm", etc.
+  int32 sample_rate = 3;     // default 16000
+}
+
+message TranscriptionResponse {
+  string text = 1;
+  float duration_seconds = 2;
+  float inference_time_seconds = 3;
+  float rtf = 4;
+  string status = 5;
+  string error_message = 6;
+}

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arabic ASR Studio - Live Speech-to-Text</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="brand-section">
+        <div class="logo-mark">
+          <span class="arabic-logo">ض</span>
+        </div>
+        <div>
+          <h1 class="brand-title">ARABIC ASR STUDIO</h1>
+          <p class="brand-subtitle">CohereLabs/cohere-transcribe-arabic-07-2026</p>
+        </div>
+      </div>
+
+      <div class="header-status-group">
+        <!-- GPU Badge -->
+        <div class="gpu-badge" id="gpuBadge" title="GPU telemetry">
+          <span class="gpu-icon">⚡</span>
+          <div class="gpu-info">
+            <span class="gpu-name" id="gpuDeviceName">NVIDIA Quadro P5000</span>
+            <span class="gpu-vram" id="gpuVramText">VRAM: Initializing...</span>
+          </div>
+        </div>
+
+        <!-- Connection Status -->
+        <div class="connection-pill" id="connPill">
+          <span class="status-dot" id="connDot"></span>
+          <span id="connText">Connecting...</span>
+        </div>
+
+        <!-- Settings Button -->
+        <button id="openSettingsBtn" class="icon-btn" title="Settings">⚙️</button>
+      </div>
+    </header>
+
+    <!-- Main Navigation / Mode Selector -->
+    <div class="mode-navigation">
+      <div class="tabs-group">
+        <button class="mode-tab active" data-mode="live" id="tabLive">
+          <span class="tab-icon">🎙️</span> Live Stream (VAD)
+        </button>
+        <button class="mode-tab" data-mode="manual" id="tabManual">
+          <span class="tab-icon">⏹️</span> Manual Record
+        </button>
+        <button class="mode-tab" data-mode="file" id="tabFile">
+          <span class="tab-icon">📁</span> Audio File Upload
+        </button>
+      </div>
+
+      <!-- State Indicator -->
+      <div class="live-status-pill status-idle" id="appStatusPill">
+        <span class="status-indicator-dot" id="statusPulseDot"></span>
+        <span class="status-label" id="statusLabel">IDLE</span>
+      </div>
+    </div>
+
+    <!-- Live Microphone Control Bar -->
+    <section class="control-panel" id="micControlPanel">
+      <div class="control-row">
+        <!-- Mic Device Selector -->
+        <div class="input-field-group">
+          <label for="micSelect">Microphone</label>
+          <select id="micSelect" class="form-select">
+            <option value="">Default Microphone</option>
+          </select>
+        </div>
+
+        <!-- Mic Permission Status -->
+        <div class="input-field-group">
+          <label>Permission</label>
+          <div class="permission-pill" id="permPill">Prompt</div>
+        </div>
+
+        <!-- Primary Start / Stop Button -->
+        <div class="action-buttons">
+          <button id="mainRecordBtn" class="btn btn-primary btn-record">
+            <span class="btn-icon">⏺</span>
+            <span id="recordBtnText">START</span>
+          </button>
+          <button id="clearSessionBtn" class="btn btn-secondary" title="Clear all session results">
+            Clear Session
+          </button>
+        </div>
+
+        <!-- Session Timer -->
+        <div class="timer-box">
+          <span class="timer-label">SESSION</span>
+          <span class="timer-value" id="sessionTimer">00:00</span>
+        </div>
+      </div>
+
+      <!-- Live Audio Waveform & Signal Meter -->
+      <div class="audio-monitor-row">
+        <div class="waveform-container">
+          <canvas id="waveformCanvas" width="700" height="60"></canvas>
+        </div>
+        <div class="level-meter-container">
+          <div class="meter-labels">
+            <span>MIC LEVEL</span>
+            <span id="micQualityBadge" class="quality-badge badge-good">GOOD</span>
+          </div>
+          <div class="meter-bar-track">
+            <div class="meter-bar-fill" id="meterFill" style="width: 0%;"></div>
+          </div>
+          <div class="meter-db" id="meterDbText">-∞ dBFS</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- File Upload Panel (hidden by default) -->
+    <section class="file-upload-panel hidden" id="fileUploadPanel">
+      <div class="dropzone" id="dropzone">
+        <div class="dropzone-icon">📂</div>
+        <h3>Drag & Drop Arabic Audio File Here</h3>
+        <p>Supports WAV, MP3, FLAC, OGG (auto-resampled to 16 kHz Mono)</p>
+        <input type="file" id="audioFileInput" accept="audio/*" class="file-input-hidden">
+        <button id="selectFileBtn" class="btn btn-secondary">Select Audio File</button>
+      </div>
+      <div id="fileUploadProgress" class="upload-progress hidden">
+        <span class="spinner"></span> Transcribing audio file...
+      </div>
+    </section>
+
+    <!-- Session Metrics Dashboard -->
+    <section class="session-dashboard">
+      <div class="metric-card">
+        <div class="metric-title">Utterances</div>
+        <div class="metric-value" id="statUtterances">0</div>
+        <div class="metric-sub">Processed</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Total Speech</div>
+        <div class="metric-value" id="statTotalAudio">0.0 <span class="unit">s</span></div>
+        <div class="metric-sub">Audio duration</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Avg ASR Latency</div>
+        <div class="metric-value" id="statAvgAsr">0.00 <span class="unit">s</span></div>
+        <div class="metric-sub">GPU inference</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Avg E2E Latency</div>
+        <div class="metric-value" id="statAvgE2e">0.00 <span class="unit">s</span></div>
+        <div class="metric-sub">Silence to display</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Avg RTF</div>
+        <div class="metric-value highlight" id="statAvgRtf">0.00</div>
+        <div class="metric-sub">Real-Time Factor</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">E2E Latency Range</div>
+        <div class="metric-value" id="statMinMaxE2e">0 / 0 <span class="unit">s</span></div>
+        <div class="metric-sub">Min / Max</div>
+      </div>
+    </section>
+
+    <!-- Transcription Feed Section -->
+    <main class="transcription-container">
+      <div class="section-header">
+        <h2>Transcription Stream</h2>
+        <span class="utterance-counter" id="utteranceCounter">0 sentences</span>
+      </div>
+
+      <div class="feed-empty-state" id="feedEmptyState">
+        <div class="empty-icon">🎙️</div>
+        <h3>No transcriptions yet</h3>
+        <p>Press <strong>START</strong> and speak in Arabic. Sentences will be segmented by silence and transcribed in real-time.</p>
+      </div>
+
+      <div class="transcription-feed" id="transcriptionFeed">
+        <!-- Utterance cards will be dynamically injected here -->
+      </div>
+    </main>
+
+    <!-- Collapsible Debug Log Panel -->
+    <footer class="debug-panel">
+      <div class="debug-header" id="toggleDebugBtn">
+        <span class="debug-title">⚙️ Local Debug Logs & Telemetry</span>
+        <div class="debug-actions">
+          <button id="clearDebugBtn" class="text-btn">Clear Logs</button>
+          <span class="debug-chevron" id="debugChevron">▼</span>
+        </div>
+      </div>
+      <div class="debug-body" id="debugBody">
+        <div class="debug-terminal" id="debugTerminal">
+          <div class="log-line text-muted">[System] Ready. Waiting for user interaction.</div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Settings Modal Drawer -->
+  <div class="modal-overlay hidden" id="settingsModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Configuration & VAD Settings</h3>
+        <button class="close-btn" id="closeSettingsBtn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="setting-item">
+          <div class="setting-label-row">
+            <label for="settingSilenceTimeout">Silence Timeout (End of Speech)</label>
+            <span class="setting-value-badge" id="valSilenceTimeout">500 ms</span>
+          </div>
+          <input type="range" id="settingSilenceTimeout" min="200" max="1500" step="50" value="500">
+          <small class="setting-help">Silence duration before an utterance is finalized and sent to ASR.</small>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-label-row">
+            <label for="settingMinSpeech">Minimum Speech Duration</label>
+            <span class="setting-value-badge" id="valMinSpeech">250 ms</span>
+          </div>
+          <input type="range" id="settingMinSpeech" min="100" max="800" step="25" value="250">
+          <small class="setting-help">Filters out momentary coughs, clicks, or background taps.</small>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-label-row">
+            <label for="settingThreshold">VAD Sensitivity Threshold</label>
+            <span class="setting-value-badge" id="valThreshold">0.50</span>
+          </div>
+          <input type="range" id="settingThreshold" min="0.2" max="0.9" step="0.05" value="0.5">
+          <small class="setting-help">Higher values reduce false triggers in noisy rooms.</small>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-label-row">
+            <label for="settingMaxUtterance">Maximum Utterance Length</label>
+            <span class="setting-value-badge" id="valMaxUtterance">25 s</span>
+          </div>
+          <input type="range" id="settingMaxUtterance" min="5" max="60" step="5" value="25">
+          <small class="setting-help">Forces ASR transcription if continuous speech exceeds this limit.</small>
+        </div>
+
+        <div class="setting-item checkbox-item">
+          <label for="settingAutoPlay">
+            <input type="checkbox" id="settingAutoPlay">
+            <span>Auto-play audio after transcription</span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="saveSettingsBtn" class="btn btn-primary">Apply Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

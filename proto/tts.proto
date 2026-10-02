@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package tts;
+
+service TTSService {
+  rpc Synthesize (SynthesizeRequest) returns (SynthesizeResponse);
+}
+
+message SynthesizeRequest {
+  string text = 1;
+  string voice = 2;          // e.g. "lahgtna-v3-balanced", "lahgtna-v3-fast", "lahgtna-v3-studio"
+  float speed = 3;           // default 1.0
+  float pitch = 4;           // default 1.0
+}
+
+message SynthesizeResponse {
+  bytes audio_data = 1;      // Audio bytes (WAV format)
+  int32 sample_rate = 2;     // 24000 Hz
+  string audio_format = 3;   // "wav"
+  float inference_time_seconds = 4;
+  string status = 5;
+  string error_message = 6;
+}

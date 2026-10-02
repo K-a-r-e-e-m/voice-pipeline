@@ -1,0 +1,281 @@
+:root {
+  --bg: #ffffff;
+  --surface: #f7f8fa;
+  --border: #e6e8eb;
+  --text-main: #111827;
+  --text-muted: #6b7280;
+  --primary: #1d4ed8;
+  --primary-soft: #eff4ff;
+  --danger: #b91c1c;
+  --danger-soft: #fef2f2;
+  --success: #15803d;
+  --speaking: #0f766e;
+  --processing: #a16207;
+  --radius: 16px;
+  --shadow: 0 10px 30px rgba(17, 24, 39, 0.05);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text-main);
+  font-family: "Cairo", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.6;
+}
+
+.page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 36px 20px 56px;
+}
+
+header {
+  margin-bottom: 28px;
+}
+
+h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin-top: 6px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 36px 24px 28px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+}
+
+.mic-button {
+  width: 112px;
+  height: 112px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--primary);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.mic-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(29, 78, 216, 0.12);
+}
+
+.mic-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.mic-button svg {
+  width: 38px;
+  height: 38px;
+}
+
+.mic-button.state-listening {
+  background: var(--primary-soft);
+}
+
+.mic-button.state-user_speaking {
+  background: #ecfdf5;
+  color: var(--speaking);
+  box-shadow: 0 0 0 8px rgba(15, 118, 110, 0.08);
+}
+
+.mic-button.state-processing {
+  color: var(--processing);
+}
+
+.mic-button.state-assistant_speaking {
+  background: var(--primary-soft);
+}
+
+.mic-button.state-error {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.state-label {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.state-hint {
+  color: var(--text-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.activity {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  height: 28px;
+}
+
+.activity span {
+  width: 4px;
+  height: 6px;
+  border-radius: 99px;
+  background: #d1d5db;
+  transition: height 0.08s linear, background 0.15s ease;
+}
+
+.activity.active span {
+  background: var(--primary);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 8px;
+}
+
+select,
+input[type="range"] {
+  font-family: inherit;
+  font-size: 13px;
+}
+
+select {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.threshold {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.cards {
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+
+.card h2 {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+}
+
+.transcript,
+.reply {
+  min-height: 56px;
+  font-size: 18px;
+}
+
+.placeholder {
+  color: #9ca3af;
+  font-size: 15px;
+}
+
+audio {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.metrics {
+  display: none;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  direction: ltr;
+}
+
+.metrics span {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 8px;
+}
+
+.alert {
+  display: none;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.alert.error {
+  display: block;
+  background: var(--danger-soft);
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.alert.info {
+  display: block;
+  background: #f8fafc;
+  color: #334155;
+  border: 1px solid var(--border);
+}
+
+.file-link {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.file-link label {
+  color: var(--primary);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.file-link input {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 24px 16px 40px;
+  }
+
+  h1 {
+    font-size: 24px;
+  }
+
+  .mic-button {
+    width: 96px;
+    height: 96px;
+  }
+}

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>المساعد الصوتي</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+  <div class="page">
+    <header>
+      <h1>المساعد الصوتي</h1>
+      <p class="subtitle">تحدث بشكل طبيعي. النظام يكتشف نهاية الجملة ويرد تلقائياً.</p>
+    </header>
+
+    <div id="alertBox" class="alert"></div>
+
+    <section class="stage">
+      <button id="micBtn" class="mic-button state-idle" type="button" aria-label="بدء الاستماع">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+          stroke-linejoin="round" aria-hidden="true">
+          <rect x="9" y="3" width="6" height="11" rx="3"></rect>
+          <path d="M5 11a7 7 0 0 0 14 0"></path>
+          <path d="M12 18v3"></path>
+        </svg>
+      </button>
+
+      <div id="activity" class="activity" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div id="stateLabel" class="state-label">جاهز</div>
+      <p id="stateHint" class="state-hint">اضغط الميكروفون لبدء الاستماع المستمر.</p>
+
+      <div class="controls">
+        <label>
+          صوت الرد
+          <select id="voiceSelect">
+            <option value="lahgtna-v3-fast" selected>سريع</option>
+            <option value="lahgtna-v3-balanced">متوازن</option>
+            <option value="lahgtna-v3-studio">استوديو</option>
+          </select>
+        </label>
+        <label class="threshold">
+          صمت الإنهاء
+          <input id="silenceRange" type="range" min="450" max="1600" step="50" value="850">
+          <span id="silenceValue">850 ms</span>
+        </label>
+      </div>
+
+      <div class="file-link">
+        أو <label for="audioFileInput">ارفع ملف صوتي</label>
+        <input type="file" id="audioFileInput" accept="audio/*" />
+      </div>
+    </section>
+
+    <section class="cards">
+      <article class="card">
+        <h2>ما سمعه النظام</h2>
+        <div id="transcriptionText" class="transcript"></div>
+      </article>
+      <article class="card">
+        <h2>رد المساعد</h2>
+        <div id="replyText" class="reply"></div>
+        <audio id="audioPlayer" controls preload="auto"></audio>
+        <div id="metricsBar" class="metrics">
+          <span id="sttMetric">STT 0.0s</span>
+          <span id="llmMetric">AI 0.0s</span>
+          <span id="ttsMetric">TTS 0.0s</span>
+          <span id="totalMetric">E2E 0.0s</span>
+        </div>
+      </article>
+    </section>
+  </div>
+
+  <script src="./voice-assistant.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,78 @@
+# ==========================================
+# 1. Secrets & Sensitive Files (IMPORTANT)
+# ==========================================
+*.token
+stt-acr.token
+*.key
+*.pem
+.env
+*.env
+.env.*
+!.env.example
+
+# ==========================================
+# 2. Python Environments & Caching
+# ==========================================
+.venv/
+.venv-test/
+venv/
+env/
+ENV/
+__pycache__/
+*/__pycache__/
+*/*/__pycache__/
+*/*/*/__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ==========================================
+# 3. Node / Frontend Dependencies & Builds
+# ==========================================
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+.next/
+build/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ==========================================
+# 4. Audio Files & Test Artifacts
+# ==========================================
+audio/*
+!audio/.gitkeep
+*.wav
+*.mp3
+*.flac
+*.ogg
+pipeline_result.json
+
+# ==========================================
+# 5. AI Models & Downloaded Caches
+# ==========================================
+models_cache/
+**/models_cache/
+checkpoints/
+*.bin
+*.pt
+*.pth
+*.safetensors
+*.onnx
+
+# ==========================================
+# 6. IDEs & Operating System Files
+# ==========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
