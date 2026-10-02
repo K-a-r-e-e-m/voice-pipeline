@@ -1,234 +1,153 @@
-# Arabic ASR Studio
+# Arabic Voice Pipeline (STT + TTS via gRPC & NestJS)
 
-> A high-performance, professional local web application for testing and demonstrating real-time Arabic Speech-to-Text (ASR) with Voice Activity Detection (VAD), live audio streaming, and deep performance telemetry.
-
-[![Model: CohereLabs/cohere-transcribe-arabic-07-2026](https://img.shields.io/badge/Model-cohere--transcribe--arabic--07--2026-blue)](https://huggingface.co/CohereLabs/cohere-transcribe-arabic-07-2026)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.5.1%2Bcu118-red.svg)](https://pytorch.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-green.svg)](https://fastapi.tiangolo.com/)
-[![CUDA](https://img.shields.io/badge/CUDA-11.8-76B900.svg)](https://developer.nvidia.com/cuda-toolkit)
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+> A production-ready, low-latency end-to-end Arabic voice assistant pipeline combining resident GPU-accelerated **Arabic Speech-to-Text (STT)**, **OmniVoice Arabic Text-to-Speech (TTS)**, and an intelligent **NestJS Gateway Orchestrator** connected via high-performance **gRPC microservices**.
 
 ---
 
-## Overview
+## 🏗️ System Architecture & Workflow
 
-**Arabic ASR Studio** is an end-to-end local testing suite built specifically for evaluating and benchmarking modern Arabic speech recognition models on local hardware. 
-
-Instead of relying on cloud APIs or impractical token-level streaming hacks, the system implements **audio-level continuous streaming**:
-1. The browser continuously captures microphone audio and resamples it to **16 kHz 16-bit PCM**.
-2. Audio chunks are streamed over a low-latency **WebSocket** connection to a local FastAPI backend.
-3. A local **Silero VAD** engine segments continuous speech into discrete sentences/utterances based on conversational silence.
-4. Completed utterances are fed directly to a resident **Cohere Arabic ASR model** on the GPU (`cuda:0` with `torch.bfloat16`).
-5. Transcriptions, technical audio quality metrics, GPU memory usage, and precise latency benchmarks appear immediately in the UI.
-
----
-
-## Key Features
-
-- **Resident GPU Model**: Loaded once at server startup and kept in VRAM. Eliminates per-request cold starts.
-- **Local Silero VAD**: Accurate speech onset and offset detection running locally on CPU via TorchScript without external dependencies.
-- **3 Operating Modes**:
-  - **Live Stream (VAD)**: Hands-free conversation mode. Speaks naturally; VAD detects sentence completion and transcribes automatically.
-  - **Manual Record**: Push-to-start / push-to-stop recording for specific phrases or noisy environments.
-  - **Audio File Upload**: Upload pre-recorded audio files (`.wav`, `.mp3`, `.flac`, `.ogg`) for instant transcription and benchmarking.
-- **Microphone Signal Quality Diagnostics**:
-  - Live oscilloscope waveform rendering.
-  - Real-time RMS volume meter and peak level monitoring.
-  - Signal warnings for silence, low gain, or digital clipping.
-- **Exact Segment Playback**: Every recognized sentence is saved as a discrete WAV file (`audio/<utterance_id>.wav`) and can be played back, scrubbed, or downloaded directly from the UI.
-- **Comprehensive Benchmarks & Telemetry**:
-  - Audio duration, ASR GPU inference time, End-to-End (E2E) latency, Real-Time Factor (RTF), and speed factor.
-  - Session-level aggregate statistics (average RTF, min/max E2E latency, total speech processed).
-  - Live GPU VRAM allocation meter (NVIDIA Quadro P5000 / CUDA).
-- **Ground-Truth Accuracy Evaluation (WER / CER)**:
-  - Enter reference text for any sentence.
-  - Automatically calculates Word Error Rate (WER) and Character Error Rate (CER).
-  - Edit operation breakdown (Substitutions, Insertions, Deletions, Correct Hits).
-  - Built-in Arabic text normalization layer (removes diacritics/tashkeel, unifies Alef, Yeh, and Teh Marbuta).
-- **100% Local & Private**: No audio or data leaves your machine.
-
----
-
-## System Architecture & Audio Flow
-
-```
-[ Browser Microphone ]
-        │
-        ▼ (Web Audio API)
-[ Resampler: Native -> 16 kHz 16-bit Mono PCM ]
-        │
-        ▼ (Binary WebSocket Frame)
-[ FastAPI WebSocket /ws/live ]
-        │
-        ▼ (Streaming Buffer)
-[ Local Silero VAD Segmenter ]
-   ├── Speech Start  ──> Emits "speaking" state to UI
-   └── Silence End   ──> Emits completed audio segment (with 300ms pre-roll)
-        │
-        ▼
-[ Utterance WAV Serialization ] ──> Saved to disk (audio/utt_*.wav)
-        │
-        ▼
-[ ASR Service (GPU: cuda:0, torch.bfloat16) ]
-   ├── torch.cuda.synchronize()
-   ├── model.generate()
-   └── torch.cuda.synchronize()
-        │
-        ▼
-[ Metrics Calculation: RTF, Latency, Diagnostics ]
-        │
-        ▼ (JSON Message via WebSocket)
-[ UI Render: Arabic Card + Audio Player + Metric Badges ]
-```
-
----
-
-## Technology Stack
-
-- **Backend**: Python 3.11, FastAPI, Uvicorn (WebSockets), PyTorch 2.5.1 + CUDA 11.8, Hugging Face Transformers.
-- **ASR Model**: `CohereLabs/cohere-transcribe-arabic-07-2026` (`CohereAsrForConditionalGeneration`).
-- **Voice Activity Detection**: `silero-vad` (TorchScript execution on CPU).
-- **Evaluation**: `jiwer`, `rapidfuzz`.
-- **Audio Processing**: `soundfile`, `librosa`, `scipy`, `numpy`.
-- **Frontend**: Vanilla HTML5, Modern CSS3 (Dark Theme, Cairo typography, responsive cards), Vanilla JavaScript (Web Audio API, Canvas oscilloscope).
-
----
-
-## Hardware & Environment Requirements
-
-- **Operating System**: Windows 10 / 11, Linux, or macOS (NVIDIA GPU recommended for high throughput).
-- **GPU**: NVIDIA GPU with CUDA support (Tested on NVIDIA Quadro P5000 16GB, Pascal architecture / compute capability 6.1).
-- **VRAM**: ~4 GB VRAM required for resident model weights in `bfloat16`.
-- **Python**: Python 3.11 recommended.
-
----
-
-## Installation & Setup
-
-### 1. Activate Environment
-Open PowerShell inside the project root:
-
-```powershell
-# If using the provided virtual environment:
-.\.venv-test\Scripts\Activate.ps1
-```
-
-Or install requirements in a fresh virtual environment:
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-
-### 2. Verify CUDA and Baseline Inference
-Run the baseline reference benchmark script:
-
-```powershell
-cmd /c "set PYTHONIOENCODING=utf-8 && python test_inference.py"
-```
-
-Expected output:
 ```text
-Model device: cuda:0
-Model dtype: torch.bfloat16
-Inference time: ~1.1 seconds
-Audio duration: 6.0 seconds
-RTF: ~0.18
+[ Browser / Web Client ] (http://localhost:3000)
+       │ ▲
+       │ │ Audio Stream / Base64 & Audio Response
+       ▼ │
+┌────────────────────────────────────────────────────────┐
+│              NestJS Voice Gateway (:3000)              │
+│  - Pipeline Orchestration & REST Endpoints             │
+│  - Static Frontend Web Server                          │
+│  - Conversational Assistant Logic                      │
+└───────┬────────────────────────────────────────▲───────┘
+        │                                        │
+        │ 1. gRPC Audio Request                  │ 3. gRPC Synthesize Request
+        │    (Port :50051)                       │    (Port :50052)
+        ▼                                        │
+┌───────────────────────────┐        ┌───────────┴───────────────┐
+│     STT gRPC Service      │        │     TTS gRPC Service      │
+│  Cohere Transcribe Arabic │        │   OmniVoice Egyptian TTS  │
+│  (Port :50051, GPU/CUDA)  │        │   (Port :50052, GPU/CUDA) │
+└───────────┬───────────────┘        └───────────────────────────┘
+            │                                    ▲
+            ▼                                    │
+     Transcribed Text  ──────────────────────────┘
+```
+
+### End-to-End Pipeline Workflow:
+1. **Audio Capture**: The browser records user speech and sends the audio to the NestJS Gateway (`POST /pipeline/process` or `/pipeline/process-base64`).
+2. **Speech-to-Text (STT)**: NestJS transmits the raw audio over low-latency binary **gRPC** (port `50051`) to the Python STT service powered by `CohereLabs/cohere-transcribe-arabic-07-2026`.
+3. **Dialogue / Assistant Logic**: The transcribed Arabic text is processed by `AssistantService` in NestJS to determine the appropriate response.
+4. **Text-to-Speech (TTS)**: NestJS sends the generated response text over **gRPC** (port `50052`) to the Python OmniVoice TTS service, which synthesizes natural Arabic audio.
+5. **Playback**: NestJS returns the synthesized audio (WAV / Base64) to the web UI for immediate playback.
+
+---
+
+## 📁 Project Structure
+
+| Directory / File | Description |
+| :--- | :--- |
+| **`nest-backend/`** | **NestJS API Gateway**: Orchestrates the voice pipeline, hosts REST endpoints (`/pipeline/*`), communicates with STT & TTS over gRPC, and serves the frontend client. |
+| **`app/`** | **STT Microservice & Engine**: Contains `stt_grpc_server.py` (gRPC port `50051`), resident GPU model loader (`asr.py`), Silero VAD segmentation (`vad.py`), and FastAPI WebSocket server (`main.py`). |
+| **`tts/`** | **TTS Microservice**: Contains `tts_grpc_server.py` (gRPC port `50052`), model downloaders, and the OmniVoice Arabic speech synthesis engine. |
+| **`proto/`** | **Protocol Buffers**: Defines gRPC contracts (`stt.proto`, `tts.proto`) and generated Python/TypeScript stubs for cross-service communication. |
+| **`frontend/`** | **Web Assistant Client**: Interactive conversational UI with audio recorder, waveform visualizer, and response audio player served at `http://localhost:3000`. |
+| **`static/`** | **Standalone ASR Studio UI**: Web dashboard used exclusively when running the standalone FastAPI ASR testing server on port `8000`. |
+| **`audio/`** | **Audio Storage**: Local folder for storing recorded utterances and test audio segments (all `.wav` ignored in git via `.gitignore`). |
+| **`start_all.bat`** | One-click launcher that boots all 3 services concurrently. |
+| **`test_pipeline_e2e.py`** | CLI test script verifying both STT and TTS gRPC connections. |
+
+---
+
+## 🚀 How to Run the Project
+
+### Prerequisites
+1. **Python 3.11** with CUDA support.
+2. **Node.js (v18+)** for NestJS backend.
+3. Install dependencies:
+   ```powershell
+   # 1. Python dependencies (in your virtualenv)
+   pip install -r requirements.txt
+
+   # 2. NestJS dependencies
+   cd nest-backend
+   npm install
+   npm run build
+   cd ..
+   ```
+
+---
+
+### Option A: One-Click Quick Start (Recommended)
+
+Simply double-click or run:
+```powershell
+.\start_all.bat
+```
+This automatically launches:
+1. `STT gRPC Service` on **`localhost:50051`**
+2. `TTS gRPC Service` on **`localhost:50052`**
+3. `NestJS Gateway` on **`localhost:3000`**
+4. Opens your browser to **`http://localhost:3000`**
+
+---
+
+### Option B: Manual Step-by-Step Execution
+
+Open 3 separate terminals:
+
+#### Terminal 1 — Start STT gRPC Server (:50051)
+```powershell
+python app/stt_grpc_server.py
+```
+
+#### Terminal 2 — Start TTS gRPC Server (:50052)
+```powershell
+python tts/tts_grpc_server.py
+```
+
+#### Terminal 3 — Start NestJS Gateway (:3000)
+```powershell
+cd nest-backend
+npm run start:prod
+# Or in development mode:
+# npm run start:dev
+```
+
+Open your browser at:
+```
+http://localhost:3000
 ```
 
 ---
 
-## Running the Web Application
-
-Start the local server using Uvicorn:
-
+### Option C: Standalone ASR Testing Studio (Optional)
+If you only want to test real-time ASR with live WebSocket streaming and VAD (without TTS or NestJS):
 ```powershell
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
-
-Once started, open your web browser and navigate to:
-
-```
-http://localhost:8000
-```
+Open: `http://localhost:8000`
 
 ---
 
-## Using the Application
+## 🧪 Testing the Services
 
-### 1. Live Mode (Hands-Free VAD)
-1. Ensure your desired microphone is selected from the dropdown.
-2. Click **START**.
-3. Speak Arabic naturally. The status badge will switch to `● SPEAKING` when speech is detected.
-4. When you stop speaking, the VAD detects silence (default 500 ms) and updates status to `◐ PROCESSING`.
-5. The transcribed Arabic text appears in a new card alongside its audio player, ASR latency, E2E latency, and RTF.
-6. Continue speaking next sentences without pressing anything, or click **STOP** when finished.
+Verify the gRPC services directly using the end-to-end Python test script:
 
-### 2. Manual Mode
-1. Click the **Manual Record** tab.
-2. Click **START** to begin capturing audio.
-3. Speak your phrase or sentence.
-4. Click **STOP** to finalize recording and transcribe the entire captured audio segment.
+```powershell
+# Test both STT and TTS gRPC endpoints:
+python test_pipeline_e2e.py both
 
-### 3. File Upload Mode
-1. Click the **Audio File Upload** tab.
-2. Drag and drop any audio file (`.wav`, `.mp3`, `.flac`, `.ogg`) or click **Select Audio File**.
-3. The server resamples the audio to 16 kHz Mono, runs inference on the GPU, and returns the transcription and metrics.
+# Or test STT only:
+python test_pipeline_e2e.py stt
 
-### 4. Accuracy Evaluation (WER / CER)
-1. On any transcription card, click **🎯 Accuracy Evaluation (Ground-Truth Reference)**.
-2. Type or paste the reference Arabic text into the input field.
-3. Keep **Arabic Normalization** checked (removes diacritics, unifies Alef forms `أ/إ/آ` to `ا`, `ة` to `ه`, `ى` to `ي`).
-4. Click **Calculate Accuracy** to inspect Word Error Rate (WER), Character Error Rate (CER), and substitution/insertion/deletion counts.
-
----
-
-## Performance Metrics Definitions
-
-| Metric | Definition | Example Value |
-| :--- | :--- | :--- |
-| **Audio Duration** | Length of the speech audio segment in seconds. | `3.21 s` |
-| **ASR Latency** | Pure GPU inference time measured with `torch.cuda.synchronize()`. | `0.68 s` |
-| **End-to-End Latency** | Time elapsed from the moment silence is detected until transcription renders in the browser. | `0.74 s` |
-| **Real-Time Factor (RTF)** | Ratio of ASR inference time to audio duration (`Inference Time / Audio Duration`). Lower is faster; `< 1.0` is faster than real-time. | `0.21` |
-| **Speed Factor** | Multiplier indicating how many times faster than real-time inference completed (`1 / RTF`). | `4.76x` |
-
----
-
-## Project Structure
-
+# Or test TTS only:
+python test_pipeline_e2e.py tts
 ```
-arabic-asr-service/
-├── app/
-│   ├── __init__.py
-│   ├── main.py              # FastAPI server, REST routes, lifespan model startup
-│   ├── asr.py               # Singleton ASR service, model warmup, GPU inference
-│   ├── vad.py               # Silero VAD audio stream buffer & utterance segmenter
-│   ├── websocket.py         # WebSocket live streaming handler & state machine
-│   ├── audio.py             # Audio utilities (WAV writer, resampling, volume/RMS)
-│   ├── metrics.py           # Latency, RTF, GPU VRAM tracking, WER/CER evaluation
-│   └── config.py            # Global configuration and default parameters
-├── static/
-│   ├── index.html           # Dark-theme dashboard UI
-│   ├── style.css            # Responsive modern styling & Cairo Arabic typography
-│   └── app.js               # Web Audio capture, WebSocket client, oscilloscope
-├── audio/                   # Stored utterance audio files (.wav)
-│   └── .gitkeep
-├── test_inference.py        # Preserved baseline benchmark script
-├── requirements.txt         # Pinned Python package dependencies
-├── README.md                # English documentation & repository overview
-└── README_AR.md             # In-depth Arabic developer guide
+
+Check NestJS Gateway health:
+```
+GET http://localhost:3000/pipeline/health
 ```
 
 ---
 
-## Security & Privacy Notice
-
-This application runs **100% locally**. Microphone audio and uploaded files are processed directly on your local machine and GPU. No telemetry, audio data, or model inputs are transmitted to external cloud services.
-
----
-
-## License
-
-This project is licensed under the Apache 2.0 License.
+## 🔒 Security Note
+Private tokens (e.g. Hugging Face tokens), virtual environments (`.venv*`), `node_modules/`, and generated `.wav` files are excluded by `.gitignore`. Never commit `.token` or `.env` files to source control.
