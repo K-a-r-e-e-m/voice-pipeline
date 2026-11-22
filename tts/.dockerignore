@@ -1,0 +1,15 @@
+node_modules
+dist
+venv
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.env
+.git
+.gitignore
+models_cache
+*.wav
+*.mp3
+.pytest_cache
