@@ -262,3 +262,4 @@ self.model_lock = asyncio.Lock()
    وبعدها افتح في المتصفح:
    `http://localhost:8000`
 
+شكرا 
